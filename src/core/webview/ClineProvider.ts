@@ -94,6 +94,7 @@ import { ContextProxy } from "../config/ContextProxy"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { Task } from "../task/Task"
+import { isXcoderEntitlementEnforced } from "../auth/xcoderCloudConfig"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
 import type { ClineMessage, TodoItem } from "@roo-code/types"
@@ -103,6 +104,7 @@ import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
 import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
 import { validateAndFixToolResultIds } from "../task/validateToolResultIds"
+import { EntitlementRequiredError, entitlementService } from "../../services/entitlement/EntitlementService"
 
 /**
  * https://github.com/microsoft/vscode-webview-ui-toolkit-samples/blob/main/default/weather-webview/src/providers/WeatherViewProvider.ts
@@ -2936,6 +2938,19 @@ export class ClineProvider
 
 		const { apiConfiguration, organizationAllowList, enableCheckpoints, checkpointTimeout, experiments } =
 			await this.getState()
+
+		if (!parentTask && isXcoderEntitlementEnforced()) {
+			try {
+				entitlementService.ensureAccess("chat")
+			} catch (error) {
+				if (error instanceof EntitlementRequiredError) {
+					void vscode.window.showWarningMessage(
+						"xcoder 尚未激活或订阅已失效，请先登录并完成付费激活。",
+					)
+				}
+				throw error
+			}
+		}
 
 		// Single-open-task invariant: always enforce for user-initiated top-level tasks
 		if (!parentTask) {
