@@ -237,6 +237,7 @@ export class ClineProvider
 		})
 
 		this.marketplaceManager = new MarketplaceManager(this.context, this.customModesManager)
+		void this.restoreXcoderSessionState()
 
 		// Forward <most> task events to the provider.
 		// We do something fairly similar for the IPC-based API.
@@ -725,6 +726,17 @@ export class ClineProvider
 		this.removeAllListeners()
 
 		McpServerManager.unregisterProvider(this)
+	}
+
+	private async restoreXcoderSessionState(): Promise<void> {
+		try {
+			const session = await this.xcoderSessionService.getSession()
+			if (session.entitlement) {
+				entitlementService.setEntitlement(session.entitlement)
+			}
+		} catch (error) {
+			this.log(`[xcoder] failed to restore cached session state: ${error}`)
+		}
 	}
 
 	public static getVisibleInstance(): ClineProvider | undefined {
