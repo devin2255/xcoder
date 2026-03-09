@@ -731,6 +731,13 @@ export class ClineProvider
 	private async restoreXcoderSessionState(): Promise<void> {
 		try {
 			const session = await this.xcoderSessionService.getSession()
+
+			if (this.xcoderSessionService.isExpired(session)) {
+				await this.xcoderSessionService.clearSession()
+				entitlementService.setEntitlement({ status: "anonymous" })
+				return
+			}
+
 			if (session.entitlement) {
 				entitlementService.setEntitlement(session.entitlement)
 			}

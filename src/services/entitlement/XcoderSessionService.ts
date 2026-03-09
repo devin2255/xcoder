@@ -45,6 +45,32 @@ export class XcoderSessionService {
 		}
 	}
 
+	public async hasActiveSession(): Promise<boolean> {
+		const session = await this.getSession()
+		return !!session.accessToken && !this.isExpired(session)
+	}
+
+	public isExpired(session: XcoderSessionState): boolean {
+		if (!session.expiresAt) {
+			return false
+		}
+
+		const expiresAt = new Date(session.expiresAt).getTime()
+		if (Number.isNaN(expiresAt)) {
+			return false
+		}
+
+		return expiresAt <= Date.now()
+	}
+
+	public async updateEntitlement(entitlement: EntitlementState | null | undefined): Promise<void> {
+		const session = await this.getSession()
+		await this.setSession({
+			...session,
+			entitlement: entitlement ?? null,
+		})
+	}
+
 	public async setSession(session: XcoderSessionState): Promise<void> {
 		await Promise.all([
 			session.accessToken
