@@ -105,6 +105,7 @@ import { getUri } from "./getUri"
 import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
 import { validateAndFixToolResultIds } from "../task/validateToolResultIds"
 import { EntitlementRequiredError, entitlementService } from "../../services/entitlement/EntitlementService"
+import { XcoderSessionService } from "../../services/entitlement/XcoderSessionService"
 
 /**
  * https://github.com/microsoft/vscode-webview-ui-toolkit-samples/blob/main/default/weather-webview/src/providers/WeatherViewProvider.ts
@@ -153,6 +154,7 @@ export class ClineProvider
 
 	private recentTasksCache?: string[]
 	public readonly taskHistoryStore: TaskHistoryStore
+	public readonly xcoderSessionService: XcoderSessionService
 	private taskHistoryStoreInitialized = false
 	private globalStateWriteThroughTimer: ReturnType<typeof setTimeout> | null = null
 	private static readonly GLOBAL_STATE_WRITE_THROUGH_DEBOUNCE_MS = 5000 // 5 seconds
@@ -184,6 +186,7 @@ export class ClineProvider
 	) {
 		super()
 		this.currentWorkspacePath = getWorkspacePath()
+		this.xcoderSessionService = new XcoderSessionService(this.context)
 
 		ClineProvider.activeInstances.add(this)
 
