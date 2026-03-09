@@ -95,6 +95,7 @@ import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { Task } from "../task/Task"
 import { isXcoderEntitlementEnforced } from "../auth/xcoderCloudConfig"
+import { XcoderAuthService } from "../auth/XcoderAuthService"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
 import type { ClineMessage, TodoItem } from "@roo-code/types"
@@ -155,6 +156,7 @@ export class ClineProvider
 	private recentTasksCache?: string[]
 	public readonly taskHistoryStore: TaskHistoryStore
 	public readonly xcoderSessionService: XcoderSessionService
+	public readonly xcoderAuthService: XcoderAuthService
 	private taskHistoryStoreInitialized = false
 	private globalStateWriteThroughTimer: ReturnType<typeof setTimeout> | null = null
 	private static readonly GLOBAL_STATE_WRITE_THROUGH_DEBOUNCE_MS = 5000 // 5 seconds
@@ -187,6 +189,7 @@ export class ClineProvider
 		super()
 		this.currentWorkspacePath = getWorkspacePath()
 		this.xcoderSessionService = new XcoderSessionService(this.context)
+		this.xcoderAuthService = new XcoderAuthService(this.xcoderSessionService)
 
 		ClineProvider.activeInstances.add(this)
 
