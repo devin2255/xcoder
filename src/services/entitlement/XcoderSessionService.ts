@@ -20,6 +20,7 @@ export type XcoderSessionState = {
 const ACCESS_TOKEN_KEY = "xcoder.auth.accessToken"
 const REFRESH_TOKEN_KEY = "xcoder.auth.refreshToken"
 const SESSION_META_KEY = "xcoder.auth.sessionMeta"
+const DEFAULT_REFRESH_THRESHOLD_MS = 5 * 60 * 1000
 
 export class XcoderSessionService {
 	constructor(private readonly context: vscode.ExtensionContext) {}
@@ -50,6 +51,16 @@ export class XcoderSessionService {
 		return !!session.accessToken && !this.isExpired(session)
 	}
 
+	public async clearIfExpired(): Promise<XcoderSessionState> {
+		const session = await this.getSession()
+		if (this.isExpired(session)) {
+			await this.clearSession()
+			return {}
+		}
+
+		return session
+	}
+
 	public isExpired(session: XcoderSessionState): boolean {
 		if (!session.expiresAt) {
 			return false
@@ -61,6 +72,22 @@ export class XcoderSessionService {
 		}
 
 		return expiresAt <= Date.now()
+	}
+
+	public shouldRefreshSoon(
+		session: XcoderSessionState,
+		thresholdMs: number = DEFAULT_REFRESH_THRESHOLD_MS,
+	): boolean {
+		if (!session.expiresAt) {
+			return false
+		}
+
+		const expiresAt = new Date(session.expiresAt).getTime()
+		if (Number.isNaN(expiresAt)) {
+			return false
+		}
+
+		return expiresAt - Date.now() <= thresholdMs
 	}
 
 	public async updateEntitlement(entitlement: EntitlementState | null | undefined): Promise<void> {

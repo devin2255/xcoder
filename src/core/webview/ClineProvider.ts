@@ -730,12 +730,15 @@ export class ClineProvider
 
 	private async restoreXcoderSessionState(): Promise<void> {
 		try {
-			const session = await this.xcoderSessionService.getSession()
+			const session = await this.xcoderSessionService.clearIfExpired()
 
-			if (this.xcoderSessionService.isExpired(session)) {
-				await this.xcoderSessionService.clearSession()
+			if (!session.accessToken) {
 				entitlementService.setEntitlement({ status: "anonymous" })
 				return
+			}
+
+			if (this.xcoderSessionService.shouldRefreshSoon(session)) {
+				this.log("[xcoder] cached session is nearing expiry and should be refreshed soon")
 			}
 
 			if (session.entitlement) {
