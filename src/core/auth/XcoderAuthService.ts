@@ -15,6 +15,9 @@ export class XcoderAuthService {
 		}
 
 		if (session.accessToken && !this.sessionService.shouldRefreshSoon(session)) {
+			if (session.entitlement) {
+				entitlementService.setEntitlement(session.entitlement)
+			}
 			return session
 		}
 

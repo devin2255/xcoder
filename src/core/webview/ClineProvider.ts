@@ -731,22 +731,28 @@ export class ClineProvider
 		McpServerManager.unregisterProvider(this)
 	}
 
+	private async hydrateXcoderSessionState(): Promise<void> {
+		const session = await this.xcoderAuthService.refreshSessionIfNeeded()
+
+		if (!session?.accessToken) {
+			entitlementService.setEntitlement({ status: "anonymous" })
+			return
+		}
+
+		if (session.entitlement) {
+			entitlementService.setEntitlement(session.entitlement)
+			return
+		}
+
+		const syncedSession = await this.xcoderAuthService.syncEntitlement()
+		if (syncedSession?.entitlement) {
+			entitlementService.setEntitlement(syncedSession.entitlement)
+		}
+	}
+
 	private async restoreXcoderSessionState(): Promise<void> {
 		try {
-			const session = await this.xcoderSessionService.clearIfExpired()
-
-			if (!session.accessToken) {
-				entitlementService.setEntitlement({ status: "anonymous" })
-				return
-			}
-
-			if (this.xcoderSessionService.shouldRefreshSoon(session)) {
-				this.log("[xcoder] cached session is nearing expiry and should be refreshed soon")
-			}
-
-			if (session.entitlement) {
-				entitlementService.setEntitlement(session.entitlement)
-			}
+			await this.hydrateXcoderSessionState()
 		} catch (error) {
 			this.log(`[xcoder] failed to restore cached session state: ${error}`)
 		}
@@ -2969,6 +2975,7 @@ export class ClineProvider
 
 		if (!parentTask && isXcoderEntitlementEnforced()) {
 			try {
+				await this.hydrateXcoderSessionState()
 				entitlementService.ensureAccess("chat")
 			} catch (error) {
 				if (error instanceof EntitlementRequiredError) {

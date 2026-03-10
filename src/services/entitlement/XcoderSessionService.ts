@@ -53,12 +53,22 @@ export class XcoderSessionService {
 
 	public async clearIfExpired(): Promise<XcoderSessionState> {
 		const session = await this.getSession()
-		if (this.isExpired(session)) {
-			await this.clearSession()
-			return {}
+		if (!this.isExpired(session)) {
+			return session
 		}
 
-		return session
+		if (session.refreshToken) {
+			const refreshableSession: XcoderSessionState = {
+				...session,
+				accessToken: null,
+				expiresAt: null,
+			}
+			await this.setSession(refreshableSession)
+			return refreshableSession
+		}
+
+		await this.clearSession()
+		return {}
 	}
 
 	public isExpired(session: XcoderSessionState): boolean {
