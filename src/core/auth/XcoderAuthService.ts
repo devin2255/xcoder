@@ -57,10 +57,12 @@ export class XcoderAuthService {
 	public async logout(): Promise<void> {
 		const session = await this.sessionService.getSession()
 		try {
-			await this.authApi.logout({
-				accessToken: session.accessToken,
-				refreshToken: session.refreshToken,
-			})
+			if (session.accessToken || session.refreshToken) {
+				await this.authApi.logout({
+					accessToken: session.accessToken,
+					refreshToken: session.refreshToken,
+				})
+			}
 		} finally {
 			await this.sessionService.clearSession()
 			entitlementService.setEntitlement({ status: "anonymous" })

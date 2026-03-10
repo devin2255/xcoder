@@ -2750,6 +2750,15 @@ export class ClineProvider
 			}
 		}
 
+		try {
+			await this.xcoderAuthService.logout()
+		} catch (error) {
+			this.log(
+				`[xcoder] Failed to clear cached auth state during reset: ${error instanceof Error ? error.message : String(error)}`,
+			)
+			// Continue with reset even if logout fails after clearing local session state
+		}
+
 		await this.contextProxy.resetAllState()
 		await this.providerSettingsManager.resetAllConfigs()
 		await this.customModesManager.resetCustomModes()
@@ -2979,9 +2988,7 @@ export class ClineProvider
 				entitlementService.ensureAccess("chat")
 			} catch (error) {
 				if (error instanceof EntitlementRequiredError) {
-					void vscode.window.showWarningMessage(
-						"xcoder 尚未激活或订阅已失效，请先登录并完成付费激活。",
-					)
+					void vscode.window.showWarningMessage("xcoder 尚未激活或订阅已失效，请先登录并完成付费激活。")
 				}
 				throw error
 			}
